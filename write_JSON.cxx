@@ -284,7 +284,7 @@ static void append_step_curve(
 	StixMeshNurbs nurbs;
 	stixmesh_create_bounded_curve(&nurbs, curve, rep);
 
-	StixMeshBoundingBox bbox;
+	RoseBoundingBox bbox;
 
 	if (!nurbs.getConvexHull(&bbox)) {
 		printf("Could not get convec hull of curve, skipping");
@@ -534,22 +534,20 @@ static void append_asm_child(
 	Value temp;
 	temp["ref"] = ref;
 
-	unsigned i, j;
-	StixMtrx xform = stix_get_transform(mgr);
+	unsigned i;
+	RoseXform xform = stix_get_transform(mgr);
 	string xformString;
-	for (i = 0; i<4; i++) {
-		for (j = 0; j<4; j++) {
-			if (i == 3 && j == 3){
-				char buff[64];
-				sprintf(buff, "%.15g", xform.get(j, i));
-				xformString = xformString + buff;
-			}
-			else{
-				char buff[64];
-				sprintf(buff, "%.15g ", xform.get(j, i));
-				xformString = xformString + buff;
-			}
-		}
+	for (i = 0; i<16; i++) {
+	    if (i == 16){
+		char buff[64];
+		sprintf(buff, "%.15g", xform.m[i]);
+		xformString = xformString + buff;
+	    }
+	    else{
+		char buff[64];
+		sprintf(buff, "%.15g ", xform.m[i]);
+		xformString = xformString + buff;
+	    }
 	}
 
 	temp["xform"] = xformString;
@@ -595,11 +593,11 @@ void queue_shapes(
 	string id = append_ref(rep);
 	shapeVal["id"] = id;
 
-	StixUnit unit = stix_get_context_length_unit(rep);
-	if (unit != stixunit_unknown)
+	RoseUnit unit = stix_get_context_length_unit(rep);
+	if (unit != roseunit_unknown)
 	{
 		char buff[20];
-		sprintf(buff, "%s %f",stix_get_unit_name(unit), stix_get_converted_measure(1., unit, stixunit_m));
+		sprintf(buff, "%s %f",stix_get_unit_name(unit), rose_get_measure_as_unit(1., unit, roseunit_m));
 		shapeVal["unit"] = buff;
 	}
 
@@ -661,13 +659,13 @@ void queue_shapes(
 // Write Triangle Data for a Facetted Shell
 //
 static void append_facet(
-	const StixMeshFacetSet * fs,
+	const RoseMeshFacetSet * fs,
 	unsigned fidx,
 	int write_normal,
 	Value &facets
 	)
 {
-	const StixMeshFacet * f = fs->getFacet(fidx);
+	const RoseMeshFacet * f = fs->getFacet(fidx);
 	if (!f) return;
 
 	char buff[64];
@@ -716,14 +714,14 @@ void append_shell_facets(
 	int WRITE_NORMAL = 0;
 	unsigned i, sz;
 	unsigned j, szz;
-	const StixMeshFacetSet * facets = shell->getFacetSet();
+	const RoseMeshFacetSet * facets = shell->getFacetSet();
 
 
 	string id = append_ref(shell->getStepSolid());
 	shellVal["id"] = id;
 
 	unsigned dflt_color = stixmesh_get_color(shell->getStepSolid());
-	if (dflt_color != STIXMESH_NULL_COLOR){
+	if (dflt_color != ROSE_MESH_NULL_COLOR){
 		char buff[] = "rrggbb ";
 		sprintf(buff, "%06x", dflt_color);
 		shellVal["color"] = buff;
@@ -758,10 +756,10 @@ void append_shell_facets(
 			continue;
 
 		// Always tag the face with a color, unless everything is null. 
-		if (color == STIXMESH_NULL_COLOR)
+		if (color == ROSE_MESH_NULL_COLOR)
 			color = dflt_color;
 
-		if (color != STIXMESH_NULL_COLOR){
+		if (color != ROSE_MESH_NULL_COLOR){
 			char buff2[] = "rrggbb ";
 			sprintf(buff2, "%06x", dflt_color);
 			color2 = buff2;
@@ -796,8 +794,8 @@ static void export_shell(
 	else
 	{
 		unsigned i, sz;
-		StixMeshBoundingBox bbox;
-		const StixMeshFacetSet * facets = shell->getFacetSet();
+		RoseBoundingBox bbox;
+		const RoseMeshFacetSet * facets = shell->getFacetSet();
 
 		// compute the bounding box for the shell
 		for (i = 0, sz = facets->getVertexCount(); i<sz; i++)
@@ -814,12 +812,12 @@ static void export_shell(
 
 		Value bboxArr;
 		//Turn the 6 bbox values into an array and set equal to bbox
-		bboxArr.append(bbox.minx);
-		bboxArr.append(bbox.miny);
-		bboxArr.append(bbox.minz);
-		bboxArr.append(bbox.maxx);
-		bboxArr.append(bbox.maxy);
-		bboxArr.append(bbox.maxz);
+		bboxArr.append(bbox.minx());
+		bboxArr.append(bbox.miny());
+		bboxArr.append(bbox.minz());
+		bboxArr.append(bbox.maxx());
+		bboxArr.append(bbox.maxy());
+		bboxArr.append(bbox.maxz());
 
 		shellVal["bbox"] = bboxArr;
 

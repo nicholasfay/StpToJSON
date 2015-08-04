@@ -1,6 +1,6 @@
-/* $RCSfile: $
+/* $RCSfile: stp2webgl.cxx $
  * $Revision: $ $Date: $
- * Auth: David Loffredo (loffredo@steptools.com)
+ * Auth: Nicholas Fay (fayn@rpi.edu)
  * 
  * Copyright (c) 1991-2015 by STEP Tools Inc. 
  * 

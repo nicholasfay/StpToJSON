@@ -301,7 +301,7 @@ static void append_step_curve(
     StixMeshNurbs nurbs;
     stixmesh_create_bounded_curve(&nurbs, curve, rep);
 
-    StixMeshBoundingBox bbox;
+    RoseBoundingBox bbox;
     
     if (!nurbs.getConvexHull(&bbox)) {
 	printf ("Could not get convec hull of curve, skipping");
@@ -525,14 +525,12 @@ static void append_asm_child(
     xml->beginElement("child");
     append_refatt (xml, "ref", child);
 
-    unsigned i,j;
-    StixMtrx xform = stix_get_transform(mgr);
+    unsigned i;
+    RoseXform xform = stix_get_transform(mgr);
     xml->beginAttribute ("xform");
-    for (i=0; i<4; i++) {
-	for (j=0; j<4; j++) {
-	    if (i || j) xml->text(" ");
-	    append_double(xml, xform.get(j,i));
-	}
+    for (i=0; i<16; i++) {
+	if (i) xml->text(" ");
+	append_double(xml, xform.m[i]);
     }
     xml->endAttribute();
     xml->endElement("child");
@@ -575,13 +573,13 @@ void queue_shapes(
     xml->beginElement("shape");
     append_refatt (xml, "id", rep);
 
-    StixUnit unit = stix_get_context_length_unit(rep);
-    if (unit != stixunit_unknown)
+    RoseUnit unit = stix_get_context_length_unit(rep);
+    if (unit != roseunit_unknown)
     {
 	xml->beginAttribute("unit");
 	xml->text (stix_get_unit_name(unit));
 	char buff[20];
-	sprintf (buff, " %f", stix_get_converted_measure(1., unit, stixunit_m));
+	sprintf (buff, " %f", rose_get_measure_as_unit(1., unit, roseunit_m));
 	xml->text(buff);    
 	xml->endAttribute();
     }
@@ -637,12 +635,12 @@ void queue_shapes(
 //
 static void append_facet(
     RoseXMLWriter * xml,
-    const StixMeshFacetSet * fs,
+    const RoseMeshFacetSet * fs,
     unsigned fidx,
     int write_normal
     )
 {
-    const StixMeshFacet * f = fs->getFacet(fidx);
+    const RoseMeshFacet * f = fs->getFacet(fidx);
     if (!f) return;
     
     xml->beginElement("f");		
@@ -697,13 +695,13 @@ void append_shell_facets(
     int WRITE_NORMAL = 0;
     unsigned i,sz;
     unsigned j,szz; 
-    const StixMeshFacetSet * facets = shell->getFacetSet();
+    const RoseMeshFacetSet * facets = shell->getFacetSet();
     
     xml->beginElement("shell");
     append_refatt(xml, "id", shell->getStepSolid());
 
     unsigned dflt_color = stixmesh_get_color (shell->getStepSolid());
-    if (dflt_color != STIXMESH_NULL_COLOR) 
+    if (dflt_color != ROSE_MESH_NULL_COLOR) 
 	append_color(xml, dflt_color);
     
     xml->beginElement("verts");
@@ -735,10 +733,10 @@ void append_shell_facets(
 	xml->beginElement("facets");
 
 	// Always tag the face with a color, unless everything is null. 
-	if (color == STIXMESH_NULL_COLOR)
+	if (color == ROSE_MESH_NULL_COLOR)
 	    color = dflt_color;
 
-	if (color != STIXMESH_NULL_COLOR) 
+	if (color != ROSE_MESH_NULL_COLOR) 
 	    append_color(xml, color);
 
 	for (j=0, szz=fi->getFacetCount(); j<szz; j++) {
@@ -765,8 +763,8 @@ static void export_shell(
     else
     {
 	unsigned i,sz;
-	StixMeshBoundingBox bbox;
-	const StixMeshFacetSet * facets = shell->getFacetSet();
+	RoseBoundingBox bbox;
+	const RoseMeshFacetSet * facets = shell->getFacetSet();
 
 	// compute the bounding box for the shell
 	for (i=0, sz=facets->getVertexCount(); i<sz; i++)
@@ -786,12 +784,12 @@ static void export_shell(
 	xml->endAttribute();
 	
 	xml->beginAttribute("bbox");
-	append_double(xml, bbox.minx);    xml->text(" ");
-	append_double(xml, bbox.miny);    xml->text(" ");
-	append_double(xml, bbox.minz);    xml->text(" ");
-	append_double(xml, bbox.maxx);    xml->text(" ");
-	append_double(xml, bbox.maxy);    xml->text(" ");
-	append_double(xml, bbox.maxz);
+	append_double(xml, bbox.minx());    xml->text(" ");
+	append_double(xml, bbox.miny());    xml->text(" ");
+	append_double(xml, bbox.minz());    xml->text(" ");
+	append_double(xml, bbox.maxx());    xml->text(" ");
+	append_double(xml, bbox.maxy());    xml->text(" ");
+	append_double(xml, bbox.maxz());
 	xml->endAttribute();
 
 	// append the area 

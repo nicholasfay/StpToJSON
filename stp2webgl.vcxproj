@@ -117,7 +117,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ROSE)\lib\i86_win32_vc12_md</AdditionalLibraryDirectories>
-      <AdditionalDependencies>stpcad.lib;stpcad_stixmesh.lib;stpcad_stix.lib;p28e2.lib;rose.lib;dtnurbsc.lib;vcf2c.lib;kernel32.lib;user32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>rosemath.lib;stpcad.lib;stpcad_stixmesh.lib;stpcad_stix.lib;p28e2.lib;rose.lib;dtnurbsc.lib;vcf2c.lib;kernel32.lib;user32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>

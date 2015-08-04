@@ -42,7 +42,7 @@ static unsigned count_mesh_for_product (
 static void print_mesh_for_product (
     FILE * stlfile,
     stp_product_definition * pd,
-    StixMtrx &starting_placement
+    RoseXform &starting_placement
     );
 
 // ======================================================================
@@ -94,7 +94,7 @@ extern int write_binary_stl (stp2webgl_opts * opts)
 	// The root placement is usually the identity matrix but some
 	// systems put a standalone AP3D at the top to place the whole
 	// thing in the global space.
-	StixMtrx root_placement; 
+	RoseXform root_placement; 
 
 	print_mesh_for_product (stlfile, opts->root_prods[i], root_placement);
     }
@@ -186,14 +186,14 @@ unsigned count_mesh_for_product (
 
 static void print_triangle (
     FILE * stlfile,
-    const StixMeshFacetSet * fs,
-    StixMtrx &xform,
+    const RoseMeshFacetSet * fs,
+    RoseXform &xform,
     unsigned facet_num
     )
 {
     double v[3];
     double n[3];
-    const StixMeshFacet * f = fs-> getFacet(facet_num);
+    const RoseMeshFacet * f = fs-> getFacet(facet_num);
     if (!f) return;
 
     // The components of the triangle verticies and vertex normals are
@@ -203,25 +203,25 @@ static void print_triangle (
 //FACET_NORMAL_NOW_COMPUTED_IN_LATEST_VERSIONS    
 #ifdef LATEST_STDEV
     fs->getFacetNormal(n, f);
-    stixmesh_transform_dir (n, xform, n); 
+    rose_xform_apply_dir(n, xform, n);
 #else
-    stixmesh_transform_dir (n, xform, fs-> getNormal(f-> facet_normal));
+    rose_xform_apply_dir(n, xform, fs-> getNormal(f-> facet_normal));
 #endif
     write_float(stlfile, n[0]);
     write_float(stlfile, n[1]);
     write_float(stlfile, n[2]);
 
-    stixmesh_transform (v, xform, fs-> getVertex(f-> verts[0]));
+    rose_xform_apply(v, xform, fs->getVertex(f->verts[0]));
     write_float(stlfile, v[0]);
     write_float(stlfile, v[1]);
     write_float(stlfile, v[2]);
 
-    stixmesh_transform (v, xform, fs-> getVertex(f-> verts[1]));
+    rose_xform_apply(v, xform, fs->getVertex(f->verts[1]));
     write_float(stlfile, v[0]);
     write_float(stlfile, v[1]);
     write_float(stlfile, v[2]);
 
-    stixmesh_transform (v, xform, fs-> getVertex(f-> verts[2]));
+    rose_xform_apply(v, xform, fs->getVertex(f->verts[2]));
     write_float(stlfile, v[0]);
     write_float(stlfile, v[1]);
     write_float(stlfile, v[2]);
@@ -234,7 +234,7 @@ static void print_triangle (
 static void print_mesh_for_shape (
     FILE * stlfile,
     stp_representation * rep,
-    StixMtrx &rep_xform
+    RoseXform &rep_xform
     )
 {
     unsigned i, sz;
@@ -253,7 +253,7 @@ static void print_mesh_for_shape (
 	StixMeshStp * mesh = stixmesh_cache_find (it);
 	if (!mesh) continue;
 
-	const StixMeshFacetSet * fs = mesh-> getFacetSet();
+	const RoseMeshFacetSet * fs = mesh-> getFacetSet();
 
 	for (j=0, szz=fs->getFacetCount(); j< szz; j++) {
 	    print_triangle (stlfile, fs, rep_xform, j);
@@ -276,10 +276,11 @@ static void print_mesh_for_shape (
 	stp_representation * child = stix_get_shape_usage_child_rep (rel);
 
 	// Move to location in enclosing asm
-	StixMtrx child_xform = stix_get_shape_usage_xform (rel);
-	child_xform = child_xform * rep_xform;
+	RoseXform child_xform = stix_get_shape_usage_xform (rel);
+	RoseXform result;
+	rose_xform_compose(result, child_xform, rep_xform);
 
-	print_mesh_for_shape (stlfile, child, child_xform);
+	print_mesh_for_shape (stlfile, child, result);
     }
 
 
@@ -289,8 +290,9 @@ static void print_mesh_for_shape (
 	stp_representation * child = stix_get_shape_usage_child_rep (rel);
 
 	// Move to location in enclosing asm
-	StixMtrx child_xform = stix_get_shape_usage_xform (rel);
-	child_xform = child_xform * rep_xform;
+	RoseXform child_xform = stix_get_shape_usage_xform (rel);
+	RoseXform result;
+	rose_xform_compose(result, child_xform, rep_xform);
 
 	print_mesh_for_shape (stlfile, child, child_xform);
     }
@@ -300,7 +302,7 @@ static void print_mesh_for_shape (
 static void print_mesh_for_product (
     FILE * stlfile,
     stp_product_definition * pd,
-    StixMtrx &starting_placement
+    RoseXform &starting_placement
     ) 
 {
     // Print the shape tree for each shape associated with a product,
